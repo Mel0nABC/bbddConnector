@@ -4,28 +4,22 @@
  */
 package com.mycompany.bbddconnector;
 
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
 
 /**
  *
  * @author alex
  */
 public class ConnectarMySQL {
-
-    private String url = "";
-    private String user = "";
-    private String passwd = "";
+    
     private Connection miCon;
-   
     
     public Connection connect(String user, String passwd, String url) {
-        
-        this.user = user;
-        this.passwd = passwd;
-        this.url = url;
+
         try {
             Class.forName("com.mysql.cj.jdbc.Driver");
             //PRIMER PASO, CREAMOS CONEXIÓN

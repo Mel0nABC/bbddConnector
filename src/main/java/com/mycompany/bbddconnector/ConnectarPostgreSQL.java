@@ -16,15 +16,10 @@ import java.util.logging.Logger;
  */
 public class ConnectarPostgreSQL {
 
-    private String url = "";
-    private String user = "";
-    private String passwd = "";
     private Connection miCon;
 
     public Connection connect(String user, String passwd, String url) {
-        this.user = user;
-        this.passwd = passwd;
-        this.url = url;
+
         try {
             Class.forName("org.postgresql.Driver");
             //PRIMER PASO, CREAMOS CONEXIÓN

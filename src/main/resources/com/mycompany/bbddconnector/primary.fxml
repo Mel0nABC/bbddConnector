@@ -63,7 +63,7 @@
                                     <Insets left="15.0" />
                                  </HBox.margin>
                               </ComboBox>
-                              <Button fx:id="btnConnect" mnemonicParsing="false" onAction="#connect" prefHeight="29.0" prefWidth="115.0" text="CONECTAR">
+                              <Button fx:id="btnConnect" mnemonicParsing="false" onAction="#btnConnectar" prefHeight="29.0" prefWidth="115.0" text="CONECTAR">
                                  <HBox.margin>
                                     <Insets left="15.0" />
                                  </HBox.margin>

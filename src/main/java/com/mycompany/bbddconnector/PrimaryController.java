@@ -57,7 +57,6 @@ public class PrimaryController implements Initializable {
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
-
         comboBBDD.setPromptText("Debe conectar primero.");
         comboTablas.setPromptText("Debe conectar primero.");
         btnExec.setDisable(true);
@@ -65,10 +64,11 @@ public class PrimaryController implements Initializable {
         comboTablas.setDisable(true);
         textSente.setDisable(true);
 
-        //CONFIGURACIÓN PAARA PRUEBAS
+        //CONFIGURACIÓN PARA PRUEBAS
         textUser.setText("root");
-        textPasswd.setText("");
+        textPasswd.setText("root");
         textUrlBbdd.setText("localhost");
+        //CONFIGURACIÓN PARA PRUEBAS
 
         comboBBDD.setOnAction(EventType -> {
             if (comboBBDD.getValue() != null) {
@@ -88,20 +88,24 @@ public class PrimaryController implements Initializable {
         String[] listaTiposBBDD = {"MySQL", "PostgreSQL"};
         comboTiposBBDD.getItems().addAll(listaTiposBBDD);
         comboTiposBBDD.setPromptText("Selecione un tipo.");
+        
         comboTiposBBDD.setOnAction(event -> {
             this.tipoBBDD = comboTiposBBDD.getValue().toString();
         });
+
     }
 
     public void btnConnectar() {
+
         if (btnConnect.getText().equals("CONECTAR")) {
-            if (miCon != null) {
+            if (miCon == null) {
                 lblEstado.setText("ESTADO: CONECTADO");
                 btnConnect.setText("DESCONECTAR");
                 comboTiposBBDD.setDisable(true);
                 comboBBDD.setDisable(false);
                 btnExec.setDisable(false);
                 textSente.setDisable(false);
+                connect();
             }
         } else {
             boolean respuesta = desconectar();
@@ -110,6 +114,7 @@ public class PrimaryController implements Initializable {
                 setAlert("No se ha desconectado correctamente.");
                 return;
             }
+
             lblEstado.setText("ESTADO: DESCONECTADO");
             comboBBDD.getItems().clear();
             comboBBDD.setPromptText("Debe conectar primero.");
@@ -125,7 +130,8 @@ public class PrimaryController implements Initializable {
     }
 
     public void connect() {
-
+        System.out.println("CONNECT()");
+        
         try {
             if (textUrlBbdd.getText().equals("") | textUrlBbdd.getText() == null) {
                 setAlert("Debe indicar un servidor al cual conectar.");
@@ -186,7 +192,6 @@ public class PrimaryController implements Initializable {
         } catch (SQLException ex) {
             Logger.getLogger(PrimaryController.class.getName()).log(Level.SEVERE, null, ex);
         }
-
     }
 
     public static void stopThreadConexion() {
@@ -232,7 +237,6 @@ public class PrimaryController implements Initializable {
             comboBBDD.getItems().addAll(listaBaseDatos);
             comboTablas.setPromptText("Seleccione una BBDD");
 
-            btnConnectar();
         } catch (SQLException ex) {
             Logger.getLogger(PrimaryController.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -240,7 +244,7 @@ public class PrimaryController implements Initializable {
     }
 
     public void connectPostgreeSQL(String url) {
-
+System.out.println("connectPostgreeSQL()");
 //        try {
         String user = textUser.getText();
         String passwd = textPasswd.getText();
@@ -274,13 +278,15 @@ public class PrimaryController implements Initializable {
 //            comboBBDD.setPromptText("Seleccione una BBDD");
 //            comboBBDD.getItems().addAll(listaBaseDatos);
 //            comboTablas.setPromptText("Seleccione una BBDD");
-        btnConnectar();
+
 //        } catch (SQLException ex) {
 //            Logger.getLogger(PrimaryController.class.getName()).log(Level.SEVERE, null, ex);
 //        }
     }
 
     public boolean desconectar() {
+        
+        System.out.println("desconectar()");
         boolean respuesta = false;
         try {
 
@@ -296,7 +302,7 @@ public class PrimaryController implements Initializable {
             if (miCon != null) {
                 miCon.close();
                 miCon = null;
-                System.out.println("cerrado.");
+                System.out.println("cerrado en desconectar.");
             }
 
             if (miCon == null) {
@@ -311,6 +317,7 @@ public class PrimaryController implements Initializable {
             respuesta = false;
         }
         return respuesta;
+
     }
 
     public void execSetencia() {
