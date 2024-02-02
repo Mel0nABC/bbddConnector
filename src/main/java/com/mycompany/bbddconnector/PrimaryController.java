@@ -2,6 +2,7 @@ package com.mycompany.bbddconnector;
 
 import java.net.URL;
 import java.sql.Connection;
+import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
@@ -16,6 +17,7 @@ import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.concurrent.Task;
+import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.Alert;
@@ -32,7 +34,7 @@ public class PrimaryController implements Initializable {
     private ComboBox comboBBDD, comboTablas, comboTiposBBDD;
 
     @FXML
-    private Button btnConnect, btnExec;
+    private Button btnConnect, btnExec, btnSelect, btnInsert, btnUpdate, btnDelete;
 
     @FXML
     private TextField textUrlBbdd, textSente, textUser, textPasswd;
@@ -47,6 +49,7 @@ public class PrimaryController implements Initializable {
     private Connection miCon;
     private Statement miStatement;
     private ResultSet miResultSet;
+    private DatabaseMetaData metaData;
     private String bbddSelectedString;
     private String tablaSelectedString;
     private String tipoBBDD;
@@ -60,35 +63,46 @@ public class PrimaryController implements Initializable {
         comboBBDD.setPromptText("Debe conectar primero.");
         comboTablas.setPromptText("Debe conectar primero.");
         btnExec.setDisable(true);
+        btnSelect.setDisable(true);
+        btnInsert.setDisable(true);
+        btnUpdate.setDisable(true);
+        btnDelete.setDisable(true);
         comboBBDD.setDisable(true);
         comboTablas.setDisable(true);
         textSente.setDisable(true);
 
         //CONFIGURACIÓN PARA PRUEBAS
-        textUser.setText("root");
-        textPasswd.setText("root");
-        textUrlBbdd.setText("localhost");
+//        textUser.setText("anonymous");
+//        textPasswd.setText("root");
+//        textUrlBbdd.setText("localhost");
         //CONFIGURACIÓN PARA PRUEBAS
 
         comboBBDD.setOnAction(EventType -> {
             if (comboBBDD.getValue() != null) {
                 comboTablas.setDisable(false);
-                bbddSelectedString = comboBBDD.getValue().toString();
-                mostrarTablas(bbddSelectedString);
+                mostrarTablas();
             }
         });
 
         comboTablas.setOnAction((event) -> {
             if (comboTablas.getValue() != null && comboBBDD.getValue() != null) {
+                bbddSelectedString = comboBBDD.getValue().toString();
                 tablaSelectedString = comboTablas.getValue().toString();
-                textSente.setText("SELECT * FROM " + tablaSelectedString);
+                textSente.setText("SELECT * FROM " + bbddSelectedString + "." + tablaSelectedString);
+                btnExec.setDisable(false);
+                btnSelect.setDisable(false);
+                btnInsert.setDisable(false);
+                btnUpdate.setDisable(false);
+                btnDelete.setDisable(false);
+                textSente.setDisable(false);
+                execSetencia();
             }
         });
 
-        String[] listaTiposBBDD = {"MySQL", "PostgreSQL"};
+        String[] listaTiposBBDD = {"MySQL", "PostgreSQL", "OracleDB"};
         comboTiposBBDD.getItems().addAll(listaTiposBBDD);
         comboTiposBBDD.setPromptText("Selecione un tipo.");
-        
+
         comboTiposBBDD.setOnAction(event -> {
             this.tipoBBDD = comboTiposBBDD.getValue().toString();
         });
@@ -98,14 +112,15 @@ public class PrimaryController implements Initializable {
     public void btnConnectar() {
 
         if (btnConnect.getText().equals("CONECTAR")) {
-            if (miCon == null) {
+            connect();
+            if (miCon != null) {
                 lblEstado.setText("ESTADO: CONECTADO");
                 btnConnect.setText("DESCONECTAR");
                 comboTiposBBDD.setDisable(true);
+                textUser.setDisable(true);
+                textPasswd.setDisable(true);
+                textUrlBbdd.setDisable(true);
                 comboBBDD.setDisable(false);
-                btnExec.setDisable(false);
-                textSente.setDisable(false);
-                connect();
             }
         } else {
             boolean respuesta = desconectar();
@@ -122,16 +137,22 @@ public class PrimaryController implements Initializable {
             comboTablas.setPromptText("Debe conectar primero.");
             btnConnect.setText("CONECTAR");
             btnExec.setDisable(true);
+            btnSelect.setDisable(true);
+            btnInsert.setDisable(true);
+            btnUpdate.setDisable(true);
+            btnDelete.setDisable(true);
             comboTiposBBDD.setDisable(false);
             comboTablas.setDisable(true);
             comboBBDD.setDisable(true);
             textSente.setDisable(true);
+            textUser.setDisable(false);
+            textPasswd.setDisable(false);
+            textUrlBbdd.setDisable(false);
         }
     }
 
     public void connect() {
-        System.out.println("CONNECT()");
-        
+
         try {
             if (textUrlBbdd.getText().equals("") | textUrlBbdd.getText() == null) {
                 setAlert("Debe indicar un servidor al cual conectar.");
@@ -158,6 +179,11 @@ public class PrimaryController implements Initializable {
                 case "PostgreSQL":
                     url = "jdbc:postgresql://" + textUrlBbdd.getText() + ":5432/";
                     connectPostgreeSQL(url);
+                    break;
+
+                case "OracleDB":
+                    url = "jdbc:oracle:thin:@" + textUrlBbdd.getText() + ":1521";
+                    connectOracleDB(url);
                     break;
             }
 
@@ -244,49 +270,85 @@ public class PrimaryController implements Initializable {
     }
 
     public void connectPostgreeSQL(String url) {
-System.out.println("connectPostgreeSQL()");
-//        try {
-        String user = textUser.getText();
-        String passwd = textPasswd.getText();
+        try {
+            String user = textUser.getText();
+            String passwd = textPasswd.getText();
 
-        //Creamos la conexión con la bbdd.
-        miCon = new ConnectarPostgreSQL().connect(user, passwd, url);
+            //Creamos la conexión con la bbdd.
+            miCon = new ConnectarPostgreSQL().connect(user, passwd, url);
 
-        //comprobamos que la conexión ha sido exitosa.
-        if (miCon == null) {
-            setAlert("Error en la conexión, vuelva a intentarlo o asegurese que el servidor está funcionando.");
-            return;
+            //comprobamos que la conexión ha sido exitosa.
+            if (miCon == null) {
+                setAlert("Error en la conexión, vuelva a intentarlo o asegurese que el servidor está funcionando.");
+                return;
+            }
+            metaData = miCon.getMetaData();
+            miResultSet = metaData.getSchemas();
+
+            listaBaseDatos = new ArrayList<>();
+
+            while (miResultSet.next()) {
+                String schemaName = miResultSet.getString("TABLE_SCHEM");
+                listaBaseDatos.add(schemaName);
+            }
+
+            if (listaBaseDatos.size() == 0 | listaBaseDatos == null) {
+                setAlert("No hay ninguna BBDD disponible en el servidor.");
+                return;
+            }
+
+            comboBBDD.setPromptText("Seleccione una BBDD");
+            comboBBDD.getItems().addAll(listaBaseDatos);
+            comboTablas.setPromptText("Seleccione una BBDD");
+        } catch (SQLException ex) {
+            Logger.getLogger(PrimaryController.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+
+    public void connectOracleDB(String url) {
+
+        try {
+            String user = textUser.getText();
+            String passwd = textPasswd.getText();
+
+            //Creamos la conexión con la bbdd.
+            miCon = new ConnectarOracleDB().connect(user, passwd, url);
+
+            //comprobamos que la conexión ha sido exitosa.
+            if (miCon == null) {
+                setAlert("Error en la conexión, vuelva a intentarlo o asegurese que el servidor está funcionando.");
+                return;
+            }
+
+            //Declaramos el objeto Statement.
+            miStatement = miCon.createStatement();
+
+            miResultSet = miStatement.executeQuery("SELECT table_name FROM user_tables");
+
+            listaBaseDatos = new ArrayList<>();
+
+            while (miResultSet.next()) {
+                String schemaName = miResultSet.getString(1);
+                listaBaseDatos.add(schemaName);
+            }
+
+            if (listaBaseDatos.size() == 0 | listaBaseDatos == null) {
+                setAlert("No hay ninguna BBDD disponible en el servidor.");
+                return;
+            }
+
+            comboBBDD.setPromptText("Seleccione una BBDD");
+            comboBBDD.getItems().addAll(user);
+            comboTablas.setPromptText("Seleccione una BBDD");
+
+        } catch (SQLException ex) {
+            Logger.getLogger(PrimaryController.class.getName()).log(Level.SEVERE, null, ex);
         }
 
-//            //Declaramos el objeto Statement.
-//            miStatement = miCon.createStatement();
-//
-//            //Obtenemos la lista de bbdd disponibles en el servidor.
-//            miResultSet = miStatement.executeQuery("SHOW DATABASES");
-//
-//            listaBaseDatos = new ArrayList<>();
-//            //Creamos un array con los nombres de las bbdd.
-//            while (miResultSet.next()) {
-//                listaBaseDatos.add(miResultSet.getNString(1));
-//            }
-//
-//            if (listaBaseDatos.size() == 0 | listaBaseDatos == null) {
-//                setAlert("No hay ninguna BBDD disponible en el servidor.");
-//                return;
-//            }
-//
-//            comboBBDD.setPromptText("Seleccione una BBDD");
-//            comboBBDD.getItems().addAll(listaBaseDatos);
-//            comboTablas.setPromptText("Seleccione una BBDD");
-
-//        } catch (SQLException ex) {
-//            Logger.getLogger(PrimaryController.class.getName()).log(Level.SEVERE, null, ex);
-//        }
     }
 
     public boolean desconectar() {
-        
-        System.out.println("desconectar()");
+
         boolean respuesta = false;
         try {
 
@@ -302,7 +364,6 @@ System.out.println("connectPostgreeSQL()");
             if (miCon != null) {
                 miCon.close();
                 miCon = null;
-                System.out.println("cerrado en desconectar.");
             }
 
             if (miCon == null) {
@@ -328,6 +389,8 @@ System.out.println("connectPostgreeSQL()");
 
             String query = textSente.getText();
 
+            miStatement = miCon.createStatement();
+
             miResultSet = miStatement.executeQuery(query);
 
             ResultSetMetaData metaData = miResultSet.getMetaData();
@@ -344,13 +407,14 @@ System.out.println("connectPostgreeSQL()");
 
                 tableView.getColumns().add(column);
             }
-
             // Ahora llenamos la tabla con datos del ResultSet
             while (miResultSet.next()) {
+
                 ObservableList<String> row = FXCollections.observableArrayList();
                 for (int i = 1; i <= columnCount; i++) {
                     row.add(miResultSet.getString(i));
                 }
+
                 tableView.getItems().add(row);
             }
         } catch (SQLException ex) {
@@ -360,23 +424,65 @@ System.out.println("connectPostgreeSQL()");
 
     }
 
-    public void mostrarTablas(String bbddSelected) {
+    public void mostrarTablas() {
+        String nombreBBDD = comboBBDD.getValue().toString();
+        switch (comboTiposBBDD.getValue().toString()) {
+            case "MySQL":
+                tablaMySQL(nombreBBDD);
+                break;
+            case "PostgreSQL":
+                tablaPostgreSQL(nombreBBDD);
+                break;
+            case "OracleDB":
+                comboTablas.getItems().addAll(listaBaseDatos);
+                break;
+            default:
+                throw new AssertionError();
+        }
+
+    }
+
+    public void tablaMySQL(String nombreBBDD) {
         try {
-            miStatement.execute("USE " + bbddSelected);
-            miResultSet = miStatement.executeQuery("SHOW TABLES FROM " + bbddSelected);
+            miStatement.execute("USE " + nombreBBDD);
+            miResultSet = miStatement.executeQuery("SHOW TABLES FROM " + nombreBBDD);
             ArrayList<String> tablaList = new ArrayList<>();
 
             while (miResultSet.next()) {
                 tablaList.add(miResultSet.getNString(1));
             }
-
-            Platform.runLater(() -> {
-                comboTablas.getItems().clear();
-                comboTablas.getItems().addAll(tablaList);
-            });
+            comboTablas.getItems().clear();
+            comboTablas.getItems().addAll(tablaList);
         } catch (SQLException ex) {
             Logger.getLogger(PrimaryController.class.getName()).log(Level.SEVERE, null, ex);
         }
+    }
+
+    public void tablaPostgreSQL(String nombreBBDD) {
+        try {
+
+            boolean tablaVacia = true;
+            ArrayList<String> tablaList = new ArrayList<>();
+
+            comboTablas.getItems().clear();
+            miResultSet = metaData.getTables(null, nombreBBDD, null, new String[]{"TABLE"});
+
+            while (miResultSet.next()) {
+                tablaList.add(miResultSet.getString("TABLE_NAME"));
+                if (!tablaList.isEmpty()) {
+                    tablaVacia = false;
+                }
+            }
+
+            if (tablaVacia) {
+                setAlert("Esta base de datos, no dispone de tablas.");
+                return;
+            }
+            comboTablas.getItems().addAll(tablaList);
+        } catch (SQLException ex) {
+            Logger.getLogger(PrimaryController.class.getName()).log(Level.SEVERE, null, ex);
+        }
+
     }
 
     public void setAlert(String msg) {
@@ -388,6 +494,62 @@ System.out.println("connectPostgreeSQL()");
             alert.setContentText(msg);
             alert.showAndWait();
         });
+    }
+
+    public void btnTipos(ActionEvent event) {
+
+        try {
+            Button btn = (Button) event.getSource();
+            String btnType = btn.getText();
+            miStatement = miCon.createStatement();
+            String query = "SELECT * FROM " + bbddSelectedString + "." + tablaSelectedString;
+            miResultSet = miStatement.executeQuery(query);
+            ResultSetMetaData metaData = miResultSet.getMetaData();
+            int columnCount = metaData.getColumnCount();
+            
+            switch (btnType) {
+                case "SELECT":
+                    textSente.setText("SELECT * FROM " + bbddSelectedString + "." + tablaSelectedString);
+                    break;
+                case "INSERT":
+
+                    String attriName = "";
+                    String attriNameValue = "";
+                    for (int i = 1; i <= columnCount; i++) {
+                        if (i < columnCount) {
+                            attriName += metaData.getColumnName(i) + ",";
+                            attriNameValue += "valor" + metaData.getColumnName(i) + ",";
+                        } else {
+                            attriName += metaData.getColumnName(i);
+                            attriNameValue += "valor" + metaData.getColumnName(i);
+                        }
+                    }
+                    textSente.setText("INSERT INTO " + bbddSelectedString + "." + tablaSelectedString + " (" + attriName + ") VALUES (" + attriNameValue + ")");
+
+                    break;
+
+                case "UPDATE":
+                    String setsString = "";
+                    for (int i = 1; i <= columnCount; i++) {
+                        if (i < columnCount) {
+                            setsString += metaData.getColumnName(i)+"=?, ";
+                        } else {
+                            setsString += metaData.getColumnName(i)+"=?";
+                        }
+                    }
+                    textSente.setText("UPDATE " + bbddSelectedString + "." + tablaSelectedString + " SET "+setsString+" WHERE <condition>");
+                    break;
+
+                case "DELETE":
+
+                    textSente.setText("DELETE FROM " + bbddSelectedString + "." + tablaSelectedString + " WHERE <SENTENCIA>");
+                    break;
+                default:
+                    throw new AssertionError();
+            }
+        } catch (SQLException ex) {
+            Logger.getLogger(PrimaryController.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }
 
 }

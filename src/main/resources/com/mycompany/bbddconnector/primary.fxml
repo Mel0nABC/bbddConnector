@@ -111,6 +111,26 @@
                                     <Insets left="15.0" />
                                  </HBox.margin>
                               </Button>
+                              <Button fx:id="btnSelect" mnemonicParsing="false" onAction="#btnTipos" text="SELECT">
+                                 <HBox.margin>
+                                    <Insets left="15.0" />
+                                 </HBox.margin>
+                              </Button>
+                              <Button fx:id="btnInsert" mnemonicParsing="false" onAction="#btnTipos" text="INSERT">
+                                 <HBox.margin>
+                                    <Insets left="15.0" />
+                                 </HBox.margin>
+                              </Button>
+                              <Button fx:id="btnUpdate" mnemonicParsing="false" onAction="#btnTipos" text="UPDATE">
+                                 <HBox.margin>
+                                    <Insets left="15.0" />
+                                 </HBox.margin>
+                              </Button>
+                              <Button fx:id="btnDelete" mnemonicParsing="false" onAction="#btnTipos" text="DELETE">
+                                 <HBox.margin>
+                                    <Insets left="15.0" />
+                                 </HBox.margin>
+                              </Button>
                            </children>
                            <VBox.margin>
                               <Insets top="15.0" />

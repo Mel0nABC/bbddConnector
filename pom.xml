@@ -39,7 +39,11 @@
             <artifactId>postgresql</artifactId>
             <version>42.7.1</version>
         </dependency>
-        
+        <dependency>
+            <groupId>ojdbc11</groupId>
+            <artifactId>ojdbc11</artifactId>
+            <version>23.3.0</version>
+        </dependency>
     </dependencies>
     <build>
         <plugins>
