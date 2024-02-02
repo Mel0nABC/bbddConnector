@@ -25,7 +25,7 @@ public class ConnectarMySQL {
             //PRIMER PASO, CREAMOS CONEXIÓN
             miCon = DriverManager.getConnection(url, user, passwd);
         } catch (SQLException ex) {
-            ex.printStackTrace();
+            PrimaryController.setAlert(ex.getMessage());
             miCon = null;
 
         } catch (ClassNotFoundException ex) {

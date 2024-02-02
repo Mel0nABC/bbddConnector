@@ -25,11 +25,11 @@ public class ConnectarPostgreSQL {
             //PRIMER PASO, CREAMOS CONEXIÓN
             miCon = DriverManager.getConnection(url, user, passwd);
         } catch (SQLException ex) {
-            ex.printStackTrace();
+            PrimaryController.setAlert(ex.getMessage());
             miCon = null;
 
         } catch (ClassNotFoundException ex) {
-            Logger.getLogger(ConnectarPostgreSQL.class.getName()).log(Level.SEVERE, null, ex);
+            System.out.println("error usuario y contraseña");
         }
         return miCon;
     }

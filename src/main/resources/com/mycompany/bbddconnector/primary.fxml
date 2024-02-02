@@ -48,7 +48,7 @@
                                     <Insets left="15.0" />
                                  </HBox.margin>
                               </Label>
-                              <TextField fx:id="textUrlBbdd" prefHeight="29.0" prefWidth="300.0" promptText="Indice servidor --&gt; ip:puerto">
+                              <TextField fx:id="textUrlBbdd" prefHeight="29.0" prefWidth="300.0" promptText="Ip del servidor.">
                                  <HBox.margin>
                                     <Insets left="15.0" />
                                  </HBox.margin>

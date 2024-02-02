@@ -72,9 +72,9 @@ public class PrimaryController implements Initializable {
         textSente.setDisable(true);
 
         //CONFIGURACIÓN PARA PRUEBAS
-//        textUser.setText("anonymous");
-//        textPasswd.setText("root");
-//        textUrlBbdd.setText("localhost");
+        textUser.setText("anonymous");
+        textPasswd.setText("root");
+        textUrlBbdd.setText("localhost");
         //CONFIGURACIÓN PARA PRUEBAS
 
         comboBBDD.setOnAction(EventType -> {
@@ -238,7 +238,7 @@ public class PrimaryController implements Initializable {
 
             //comprobamos que la conexión ha sido exitosa.
             if (miCon == null) {
-                setAlert("Error en la conexión, vuelva a intentarlo o asegurese que el servidor está funcionando.");
+//                setAlert("Error en la conexión, vuelva a intentarlo o asegurese que el servidor está funcionando.");
                 return;
             }
 
@@ -279,7 +279,7 @@ public class PrimaryController implements Initializable {
 
             //comprobamos que la conexión ha sido exitosa.
             if (miCon == null) {
-                setAlert("Error en la conexión, vuelva a intentarlo o asegurese que el servidor está funcionando.");
+//                setAlert("Error en la conexión, vuelva a intentarlo o asegurese que el servidor está funcionando.");
                 return;
             }
             metaData = miCon.getMetaData();
@@ -302,6 +302,7 @@ public class PrimaryController implements Initializable {
             comboTablas.setPromptText("Seleccione una BBDD");
         } catch (SQLException ex) {
             Logger.getLogger(PrimaryController.class.getName()).log(Level.SEVERE, null, ex);
+            System.out.println("TETETET: "+ex.getCause());
         }
     }
 
@@ -316,7 +317,7 @@ public class PrimaryController implements Initializable {
 
             //comprobamos que la conexión ha sido exitosa.
             if (miCon == null) {
-                setAlert("Error en la conexión, vuelva a intentarlo o asegurese que el servidor está funcionando.");
+//                setAlert("Error en la conexión, vuelva a intentarlo o asegurese que el servidor está funcionando.");
                 return;
             }
 
@@ -485,7 +486,7 @@ public class PrimaryController implements Initializable {
 
     }
 
-    public void setAlert(String msg) {
+    public static void setAlert(String msg) {
 
         Platform.runLater(() -> {
             Alert alert = new Alert(Alert.AlertType.WARNING);
