@@ -27,6 +27,7 @@ import javafx.scene.control.Label;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
+import javafx.stage.Stage;
 
 public class PrimaryController implements Initializable {
 
@@ -40,26 +41,39 @@ public class PrimaryController implements Initializable {
     private TextField textUrlBbdd, textSente, textUser, textPasswd;
 
     @FXML
-    private Label lblEstado;
+    private Label lblEstado, lblConectando;
+    private static Label lblConectando_static;
 
     @FXML
     private TableView<ObservableList<String>> tableView;
 
+    @FXML
+    private static Stage stageTmp;
+
     private ArrayList<String> listaBaseDatos;
-    private Connection miCon;
+    private static Connection miCon;
     private Statement miStatement;
     private ResultSet miResultSet;
     private DatabaseMetaData metaData;
     private String bbddSelectedString;
     private String tablaSelectedString;
     private String tipoBBDD;
-    private Task tarea;
-    private static Thread hiloConexion;
+    private Task tConnectionStatus;
+    private Task tConectando;
+    private static Thread hiloConexionStatus;
+    private Thread hiloConectando;
     private String user = "";
     private String passwd = "";
 
+//    INICIO ERRORES DETECTADOS
+//          - CUANDO SE PIERDE LA CONEXIÓN PORQUE EL SERVIDOR FALLA, EL BOTON CONECTAR/DESCONECTAR NO CAMBIA A ESTADO CONECTAR
+//          - HAY QUE ALADIR PANTALLA DE CONECTANDO
+//    INICIO ERRORES DETECTADOS
     @Override
     public void initialize(URL location, ResourceBundle resources) {
+
+        lblConectando_static = lblConectando;
+
         comboBBDD.setPromptText("Debe conectar primero.");
         comboTablas.setPromptText("Debe conectar primero.");
         btnExec.setDisable(true);
@@ -72,8 +86,8 @@ public class PrimaryController implements Initializable {
         textSente.setDisable(true);
 
         //CONFIGURACIÓN PARA PRUEBAS
-        textUser.setText("anonymous");
-        textPasswd.setText("root");
+        textUser.setText("root");
+//        textPasswd.setText("root");
         textUrlBbdd.setText("localhost");
         //CONFIGURACIÓN PARA PRUEBAS
 
@@ -110,6 +124,17 @@ public class PrimaryController implements Initializable {
     }
 
     public void btnConnectar() {
+        if (textUrlBbdd.getText().equals("") | textUrlBbdd.getText() == null) {
+            setAlert("Debe indicar un servidor al cual conectar.");
+            textUrlBbdd.requestFocus();
+            return;
+        }
+
+        if (tipoBBDD == null) {
+            setAlert("Debe seleccionar un tipo de base de datos a la cual conectar.");
+            comboTiposBBDD.requestFocus();
+            return;
+        }
 
         if (btnConnect.getText().equals("CONECTAR")) {
             connect();
@@ -123,13 +148,7 @@ public class PrimaryController implements Initializable {
                 comboBBDD.setDisable(false);
             }
         } else {
-            boolean respuesta = desconectar();
-
-            if (!respuesta) {
-                setAlert("No se ha desconectado correctamente.");
-                return;
-            }
-
+            desconectar();
             lblEstado.setText("ESTADO: DESCONECTADO");
             comboBBDD.getItems().clear();
             comboBBDD.setPromptText("Debe conectar primero.");
@@ -152,20 +171,8 @@ public class PrimaryController implements Initializable {
     }
 
     public void connect() {
-
+        loadingConnect();
         try {
-            if (textUrlBbdd.getText().equals("") | textUrlBbdd.getText() == null) {
-                setAlert("Debe indicar un servidor al cual conectar.");
-                textUrlBbdd.requestFocus();
-                return;
-            }
-
-            if (tipoBBDD == null) {
-                setAlert("Debe seleccionar un tipo de base de datos a la cual conectar.");
-                comboTiposBBDD.requestFocus();
-                return;
-            }
-
             user = textUser.getText();
             passwd = textPasswd.getText();
             String url = "";
@@ -186,11 +193,10 @@ public class PrimaryController implements Initializable {
                     connectOracleDB(url);
                     break;
             }
-
             //Tarea para ir comprobando que la conexión está establecida.
             if (miCon != null) {
                 if (miCon.isValid(2)) {
-                    tarea = new Task<Void>() {
+                    tConnectionStatus = new Task<Void>() {
                         @Override
                         protected Void call() throws Exception {
                             boolean bucle = true;
@@ -202,29 +208,88 @@ public class PrimaryController implements Initializable {
                                 if (!conexion) {
                                     setAlert("Se ha perdido la conexión con el servidor.");
                                     bucle = false;
-                                    btnConnectar();
                                     PrimaryController.stopThreadConexion();
                                 }
                             }
                             return null;
                         }
                     };
-                    hiloConexion = new Thread(tarea);
-                    hiloConexion.setDaemon(true);
-                    hiloConexion.setName("conexionThread");
-                    hiloConexion.start();
+                    hiloConexionStatus = new Thread(tConnectionStatus);
+                    hiloConexionStatus.setDaemon(true);
+                    hiloConexionStatus.setName("conexionThread");
+                    hiloConexionStatus.start();
                 }
+            } else {
+                showConectado();
+
             }
         } catch (SQLException ex) {
-            Logger.getLogger(PrimaryController.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(PrimaryController.class
+                    .getName()).log(Level.SEVERE, null, ex);
         }
     }
 
     public static void stopThreadConexion() {
         Platform.runLater(() -> {
-            PrimaryController.hiloConexion.interrupt();
+            PrimaryController.hiloConexionStatus.interrupt();
         });
 
+    }
+
+    public static Connection getMiCon() {
+        //Del thread de loadingConnect obtenemos de aquí la conexión
+        return miCon;
+    }
+
+    public void showConectando() {
+        //Muestra mensaje de conectando.
+        lblConectando_static.setVisible(true);
+
+
+    }
+
+    public void showConectado() {
+        //Oculta mensaje de conectando.
+        lblConectando_static.setVisible(false);
+    }
+
+    public void loadingConnect() {
+        showConectando();
+        //Thread para mostrar mensaje de conectando y cerrarlo cuando conecte a alguna bbdd.
+        tConectando = new Task<Void>() {
+            @Override
+            protected Void call() {
+                try {
+                    boolean bucleConexion = true;
+                    Connection miConTest;
+                    do {
+                        TimeUnit.MILLISECONDS.sleep(10);
+                        miConTest = PrimaryController.getMiCon();
+                        if (miConTest != null) {
+                            bucleConexion = false;
+                            showConectado();
+                            stopLoadingConnect();
+                        }
+                    } while (bucleConexion);
+
+                } catch (InterruptedException ex) {
+                    Logger.getLogger(PrimaryController.class
+                            .getName()).log(Level.SEVERE, null, ex);
+                }
+                return null;
+            }
+        };
+        hiloConectando = new Thread(tConectando, "loadingConnect");
+        hiloConectando.setDaemon(true);
+        hiloConectando.start();
+    }
+
+    public void stopLoadingConnect() {
+        //Paramos el hilo de loadingConnect.
+        do {
+            hiloConectando.interrupt();
+            tConectando.cancel();
+        } while (!tConectando.isCancelled() && !hiloConectando.isInterrupted());
     }
 
     public void connectMysql(String url) {
@@ -264,7 +329,8 @@ public class PrimaryController implements Initializable {
             comboTablas.setPromptText("Seleccione una BBDD");
 
         } catch (SQLException ex) {
-            Logger.getLogger(PrimaryController.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(PrimaryController.class
+                    .getName()).log(Level.SEVERE, null, ex);
         }
 
     }
@@ -300,9 +366,10 @@ public class PrimaryController implements Initializable {
             comboBBDD.setPromptText("Seleccione una BBDD");
             comboBBDD.getItems().addAll(listaBaseDatos);
             comboTablas.setPromptText("Seleccione una BBDD");
+
         } catch (SQLException ex) {
-            Logger.getLogger(PrimaryController.class.getName()).log(Level.SEVERE, null, ex);
-            System.out.println("TETETET: "+ex.getCause());
+            Logger.getLogger(PrimaryController.class
+                    .getName()).log(Level.SEVERE, null, ex);
         }
     }
 
@@ -343,7 +410,8 @@ public class PrimaryController implements Initializable {
             comboTablas.setPromptText("Seleccione una BBDD");
 
         } catch (SQLException ex) {
-            Logger.getLogger(PrimaryController.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(PrimaryController.class
+                    .getName()).log(Level.SEVERE, null, ex);
         }
 
     }
@@ -454,8 +522,10 @@ public class PrimaryController implements Initializable {
             }
             comboTablas.getItems().clear();
             comboTablas.getItems().addAll(tablaList);
+
         } catch (SQLException ex) {
-            Logger.getLogger(PrimaryController.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(PrimaryController.class
+                    .getName()).log(Level.SEVERE, null, ex);
         }
     }
 
@@ -480,8 +550,10 @@ public class PrimaryController implements Initializable {
                 return;
             }
             comboTablas.getItems().addAll(tablaList);
+
         } catch (SQLException ex) {
-            Logger.getLogger(PrimaryController.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(PrimaryController.class
+                    .getName()).log(Level.SEVERE, null, ex);
         }
 
     }
@@ -507,7 +579,7 @@ public class PrimaryController implements Initializable {
             miResultSet = miStatement.executeQuery(query);
             ResultSetMetaData metaData = miResultSet.getMetaData();
             int columnCount = metaData.getColumnCount();
-            
+
             switch (btnType) {
                 case "SELECT":
                     textSente.setText("SELECT * FROM " + bbddSelectedString + "." + tablaSelectedString);
@@ -526,30 +598,30 @@ public class PrimaryController implements Initializable {
                         }
                     }
                     textSente.setText("INSERT INTO " + bbddSelectedString + "." + tablaSelectedString + " (" + attriName + ") VALUES (" + attriNameValue + ")");
-
                     break;
 
                 case "UPDATE":
                     String setsString = "";
                     for (int i = 1; i <= columnCount; i++) {
                         if (i < columnCount) {
-                            setsString += metaData.getColumnName(i)+"=?, ";
+                            setsString += metaData.getColumnName(i) + "=?, ";
                         } else {
-                            setsString += metaData.getColumnName(i)+"=?";
+                            setsString += metaData.getColumnName(i) + "=?";
                         }
                     }
-                    textSente.setText("UPDATE " + bbddSelectedString + "." + tablaSelectedString + " SET "+setsString+" WHERE <condition>");
+                    textSente.setText("UPDATE " + bbddSelectedString + "." + tablaSelectedString + " SET " + setsString + " WHERE <condition>");
                     break;
 
                 case "DELETE":
-
                     textSente.setText("DELETE FROM " + bbddSelectedString + "." + tablaSelectedString + " WHERE <SENTENCIA>");
                     break;
                 default:
                     throw new AssertionError();
+
             }
         } catch (SQLException ex) {
-            Logger.getLogger(PrimaryController.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(PrimaryController.class
+                    .getName()).log(Level.SEVERE, null, ex);
         }
     }
 

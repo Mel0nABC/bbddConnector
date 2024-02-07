@@ -20,7 +20,7 @@ public class ConnectarOracleDB {
     private Connection miCon;
 
     public Connection connect(String user, String passwd, String url) {
-        System.out.println("IMPRIMIENDO URL ORACLE --> " + url);
+
         try {
             Class.forName("oracle.jdbc.driver.OracleDriver");
             //PRIMER PASO, CREAMOS CONEXIÓN

@@ -7,8 +7,7 @@ package com.mycompany.bbddconnector;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+
 
 /**
  *
@@ -19,8 +18,8 @@ public class ConnectarPostgreSQL {
     private Connection miCon;
 
     public Connection connect(String user, String passwd, String url) {
-
         try {
+
             Class.forName("org.postgresql.Driver");
             //PRIMER PASO, CREAMOS CONEXIÓN
             miCon = DriverManager.getConnection(url, user, passwd);

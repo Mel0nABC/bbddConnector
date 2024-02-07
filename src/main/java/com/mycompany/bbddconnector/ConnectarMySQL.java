@@ -15,11 +15,10 @@ import java.util.logging.Logger;
  * @author alex
  */
 public class ConnectarMySQL {
-    
-    private Connection miCon;
-    
-    public Connection connect(String user, String passwd, String url) {
 
+    private Connection miCon;
+
+    public Connection connect(String user, String passwd, String url) {
         try {
             Class.forName("com.mysql.cj.jdbc.Driver");
             //PRIMER PASO, CREAMOS CONEXIÓN
@@ -27,11 +26,10 @@ public class ConnectarMySQL {
         } catch (SQLException ex) {
             PrimaryController.setAlert(ex.getMessage());
             miCon = null;
-
         } catch (ClassNotFoundException ex) {
             Logger.getLogger(ConnectarMySQL.class.getName()).log(Level.SEVERE, null, ex);
         }
         return miCon;
     }
-    
+
 }

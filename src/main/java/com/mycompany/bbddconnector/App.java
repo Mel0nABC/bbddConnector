@@ -5,8 +5,8 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
-
 import java.io.IOException;
+import javafx.scene.control.Label;
 
 /**
  * JavaFX App
@@ -14,11 +14,10 @@ import java.io.IOException;
 public class App extends Application {
 
     private static Scene scene;
-    
-    
 
     @Override
-    public void start(Stage stage) throws IOException {
+    public void start(Stage stage) throws IOException, Exception {
+
         scene = new Scene(loadFXML("primary"), 1280, 1024);
         stage.setScene(scene);
         stage.show();
