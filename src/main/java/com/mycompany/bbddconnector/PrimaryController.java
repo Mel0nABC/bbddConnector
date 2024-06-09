@@ -91,7 +91,7 @@ public class PrimaryController implements Initializable {
                 mostrarTablas();
             }
         });
-
+// prueba
         comboTablas.setOnAction((event) -> {
             if (comboTablas.getValue() != null && comboBBDD.getValue() != null) {
                 bbddSelectedString = comboBBDD.getValue().toString();
