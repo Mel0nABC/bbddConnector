@@ -34,19 +34,19 @@
         <dependency>
             <groupId>org.openjfx</groupId>
             <artifactId>javafx-graphics</artifactId>
-            <version>23-ea+3</version>
+            <version>13.0.2</version>
             <type>jar</type>
         </dependency>
         <dependency>
             <groupId>org.openjfx</groupId>
             <artifactId>javafx-controls</artifactId>
-            <version>23-ea+3</version>
+            <version>13.0.2</version>
             <type>jar</type>
         </dependency>
         <dependency>
             <groupId>org.openjfx</groupId>
             <artifactId>javafx-fxml</artifactId>
-            <version>23-ea+3</version>
+            <version>13.0.2</version>
             <type>jar</type>
         </dependency>
     </dependencies>
