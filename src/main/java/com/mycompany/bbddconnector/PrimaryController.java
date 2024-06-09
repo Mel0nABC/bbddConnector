@@ -239,7 +239,6 @@ public class PrimaryController implements Initializable {
         //Muestra mensaje de conectando.
         lblConectando_static.setVisible(true);
 
-
     }
 
     public void showConectado() {
@@ -310,7 +309,9 @@ public class PrimaryController implements Initializable {
             listaBaseDatos = new ArrayList<>();
             //Creamos un array con los nombres de las bbdd.
             while (miResultSet.next()) {
-                listaBaseDatos.add(miResultSet.getNString(1));
+                String bbdd = miResultSet.getNString(1);
+                System.out.println("tabla -->" + bbdd);
+                listaBaseDatos.add(bbdd);
             }
 
             if (listaBaseDatos.size() == 0 | listaBaseDatos == null) {
@@ -342,13 +343,18 @@ public class PrimaryController implements Initializable {
 //                setAlert("Error en la conexión, vuelva a intentarlo o asegurese que el servidor está funcionando.");
                 return;
             }
-            metaData = miCon.getMetaData();
-            miResultSet = metaData.getSchemas();
+
+            //Declaramos el objeto Statement.
+            miStatement = miCon.createStatement();
+
+            //Obtenemos la lista de bbdd disponibles en el servidor.
+            miResultSet = miStatement.executeQuery("select datname from pg_database;");
 
             listaBaseDatos = new ArrayList<>();
 
             while (miResultSet.next()) {
-                String schemaName = miResultSet.getString("TABLE_SCHEM");
+                String schemaName = miResultSet.getString("datname");
+                System.out.println("schema --> "+schemaName);
                 listaBaseDatos.add(schemaName);
             }
 
