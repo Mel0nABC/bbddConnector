@@ -85,12 +85,6 @@ public class PrimaryController implements Initializable {
         comboTablas.setDisable(true);
         textSente.setDisable(true);
 
-        //CONFIGURACIÓN PARA PRUEBAS
-        textUser.setText("root");
-//        textPasswd.setText("root");
-        textUrlBbdd.setText("localhost");
-        //CONFIGURACIÓN PARA PRUEBAS
-
         comboBBDD.setOnAction(EventType -> {
             if (comboBBDD.getValue() != null) {
                 comboTablas.setDisable(false);

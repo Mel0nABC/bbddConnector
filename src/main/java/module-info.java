@@ -6,6 +6,7 @@ module com.mycompany.bbddconnector {
 
     opens com.mycompany.bbddconnector to javafx.fxml;
     exports com.mycompany.bbddconnector;
+    requires javafx.graphicsEmpty;
 
     
     
